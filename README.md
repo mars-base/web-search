@@ -5,6 +5,7 @@ richer, better-formatted results.
 
 ## Features
 
+- **Dependency check** — auto-detects missing `ddgs`/`duckduckgo-search` on startup
 - **DuckDuckGo search** — no API key needed, no rate limits for casual use
 - **Clean Markdown output** — each result has title, URL, and snippet
 - **JSON mode** — structured output for programmatic use
@@ -17,8 +18,10 @@ richer, better-formatted results.
 ```bash
 git clone https://github.com/mars-base/web-search.git
 cd web-search
-python3 -m pip install duckduckgo-search
+python3 -m pip install ddgs
 ```
+
+> **Note:** `ddgs` is the renamed package for `duckduckgo-search`. The script supports both — it tries `ddgs` first, then falls back to `duckduckgo-search`.
 
 On Windows, install Python from the Microsoft Store. On macOS/Linux with
 system-managed Python, add `--break-system-packages` or use a venv.
@@ -68,6 +71,12 @@ tool, add the following to your `~/.claude/CLAUDE.md`:
 
 Always use the `/web-search` skill for web searches — do not use the built-in WebSearch tool.
 `/web-search` returns richer results with titles, URLs, and snippets formatted as clean Markdown.
+
+Search workflow:
+1. Invoke `/web-search` to fetch top 10 results
+2. Summarize key points in 3-5 sentences
+3. Ask the user whether to explore deeper: extract content from top 3 / top 5 / all 10 links, or stop here
+4. If the user chooses to explore, use `/web-fetch` to extract full content from each selected link
 ```
 
 ## Output Format

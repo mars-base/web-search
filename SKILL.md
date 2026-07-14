@@ -2,7 +2,7 @@
 name: web-search
 description: >
   Search the web and return top results as clean Markdown.
-  Uses DuckDuckGo (via built-in WebSearch tool or local duckduckgo-search package).
+  Uses DuckDuckGo (via built-in WebSearch tool or local ddgs/duckduckgo-search package).
   Returns titles, URLs, and snippets for each result.
   Use this skill whenever the user wants to search the web, find information online,
   look up current events, or research a topic — including phrases like "搜索一下",
@@ -26,6 +26,12 @@ tool, add the following to your `~/.claude/CLAUDE.md`:
 
 Always use the `/web-search` skill for web searches — do not use the built-in WebSearch tool.
 `/web-search` returns richer results with titles, URLs, and snippets formatted as clean Markdown.
+
+Search workflow:
+1. Invoke `/web-search` to fetch top 10 results
+2. Summarize key points in 3-5 sentences
+3. Ask the user whether to explore deeper: extract content from top 3 / top 5 / all 10 links, or stop here
+4. If the user chooses to explore, use `/web-fetch` to extract full content from each selected link
 ```
 
 This ensures every project automatically prefers `/web-search` over the default tool.
@@ -44,18 +50,18 @@ python3 <SKILL_DIR>/scripts/search.py "<query>" [--limit N] [--json]
 
 > **Model instruction:** 
 > 1. Run `search.py` with the provided query (default `--limit 10`).
-> 2. **先总结**：把前 10 条搜索结果用 3-5 句话概括核心要点，呈现给用户。
-> 3. **再询问**：问用户是否需要深入探索某个链接的内容，提供选项：
->    - "需要我提取前 3 个链接的正文吗？"
->    - "需要我提取前 5 个链接的正文吗？"
->    - "需要我提取全部 10 个链接的正文吗？"
->    - "不需要，这些摘要就够了"
-> 4. 如果用户选择深入 → 用 `/web-fetch` 逐个提取所选链接的完整正文内容。
-> 5. 如果脚本不可用，回退到内置 `WebSearch` 工具。
+> 2. **Summarize first**: condense the top 10 results into 3-5 sentences highlighting key points.
+> 3. **Then ask**: offer the user options to explore deeper:
+>    - "Extract content from the top 3 links?"
+>    - "Extract content from the top 5 links?"
+>    - "Extract content from all 10 links?"
+>    - "No need, the summary is enough"
+> 4. If the user chooses to explore → use `/web-fetch` to extract full content from each selected link.
+> 5. If the script is unavailable, fall back to the built-in `WebSearch` tool.
 
 ## Search Strategy
 
-1. **Script first** — run `search.py` if `duckduckgo-search` is installed locally.
+1. **Script first** — run `search.py` if `ddgs` (or `duckduckgo-search`) is installed locally.
    Returns structured results with titles, URLs, and snippets.
 2. **Built-in fallback** — if the script fails or dependencies are missing, use
    the built-in `WebSearch` tool as fallback.
@@ -81,8 +87,10 @@ python3 <SKILL_DIR>/scripts/search.py "site:github.com golang context"
 First use only — the script checks and tells you if anything is missing:
 
 ```bash
-python3 -m pip install duckduckgo-search
+python3 -m pip install ddgs
 ```
+
+> **Note:** `ddgs` is the renamed package for `duckduckgo-search`. The script supports both — it tries `ddgs` first, then falls back to `duckduckgo-search`.
 
 If on system-managed Python (macOS/Linux), add `--break-system-packages` or use a venv.
 
