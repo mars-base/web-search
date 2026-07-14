@@ -19,6 +19,30 @@ import json
 import textwrap
 
 
+def check_dependencies():
+    """Check if required packages are installed and provide install instructions."""
+    try:
+        from ddgs import DDGS  # noqa: F401
+        return
+    except ImportError:
+        pass
+
+    try:
+        from duckduckgo_search import DDGS  # noqa: F401
+        return
+    except ImportError:
+        pass
+
+    print(
+        "Error: missing required dependency: ddgs (or duckduckgo-search)\n"
+        "Install with one of:\n"
+        "  python3 -m pip install ddgs\n"
+        "  python3 -m pip install duckduckgo-search",
+        file=sys.stderr,
+    )
+    sys.exit(1)
+
+
 def search(query, limit=10):
     """
     Search DuckDuckGo and return results.
@@ -112,4 +136,5 @@ def main():
 
 
 if __name__ == "__main__":
+    check_dependencies()
     main()
