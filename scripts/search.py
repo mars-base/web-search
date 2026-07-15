@@ -1,17 +1,18 @@
 #!/usr/bin/env python3
 """
-Web search via DuckDuckGo — returns top results as Markdown.
+Web search — returns top results as Markdown.
 
 Usage:
-  python3 search.py "query" [--limit N] [--json]
+  python3 search.py "query" [--engine ENGINE] [--limit N] [--json]
 
 Options:
+  --engine    Search engine: duck (default) | google
   --limit N   Number of results (default: 10, max: 30)
   --json      Output as JSON with metadata
 
 Examples:
   python3 search.py "Python asyncio tutorial" --limit 5
-  python3 search.py "site:github.com fastapi" 10 --json
+  python3 search.py "site:github.com fastapi" --engine google --limit 10 --json
 """
 
 import sys
@@ -43,11 +44,88 @@ def check_dependencies():
     sys.exit(1)
 
 
-def search(query, limit=10):
+def search_google(query, limit=10):
     """
-    Search DuckDuckGo and return results.
+    Search Google by scraping the search results page with CloakBrowser.
+    No API key required — uses stealth Chromium to bypass bot detection.
     Returns list of dicts: [{title, url, snippet}, ...]
     """
+    import urllib.parse
+    try:
+        import cloakbrowser
+    except ImportError:
+        raise RuntimeError(
+            "Google search via CloakBrowser requires the 'cloakbrowser' package.\n"
+            "Install with: python3 -m pip install cloakbrowser"
+        )
+
+    search_url = "https://www.google.com/search?q=" + urllib.parse.quote(query)
+
+    browser = cloakbrowser.launch(headless=True)
+    try:
+        page = browser.new_page()
+        page.goto(search_url, wait_until="networkidle", timeout=60000)
+
+        # Extract search results from Google DOM
+        # Google result selectors (may change over time)
+        results = []
+
+        # Try multiple selector strategies
+        selectors = [
+            "div.g",           # Classic Google result container
+            "div[data-sokoban-container]",  # Modern Google result
+            "div.tF2Cxc",      # Another variant
+        ]
+
+        for sel in selectors:
+            elements = page.query_selector_all(sel)
+            if elements:
+                for el in elements[:limit]:
+                    try:
+                        # Title
+                        title_el = el.query_selector("h3")
+                        title = title_el.inner_text() if title_el else ""
+
+                        # URL
+                        link_el = el.query_selector("a[href]")
+                        url = ""
+                        if link_el:
+                            href = link_el.get_attribute("href") or ""
+                            if href.startswith("/url?q="):
+                                # Extract actual URL from Google's redirect
+                                url = href.split("/url?q=")[1].split("&")[0]
+                            elif href.startswith("http"):
+                                url = href
+
+                        # Snippet
+                        snippet_el = el.query_selector("div.VwiC3b, span.aCOpRe, div.s3v94d")
+                        snippet = snippet_el.inner_text() if snippet_el else ""
+
+                        if title and url:
+                            results.append({
+                                "title": title,
+                                "url": url,
+                                "snippet": snippet,
+                            })
+                    except Exception:
+                        continue
+
+                if results:
+                    break
+
+        return results[:limit]
+    finally:
+        browser.close()
+
+
+def search(query, limit=10, engine="duck"):
+    """
+    Search using the specified engine.
+    engine: 'duck' (DuckDuckGo, default) or 'google' (CloakBrowser scraping)
+    """
+    if engine == "google":
+        return search_google(query, limit)
+    return search_duck(query, limit)
     try:
         from ddgs import DDGS
     except ImportError:
@@ -90,11 +168,14 @@ def main():
 
     if len(sys.argv) < 2:
         print(
-            "Usage: python3 search.py <query> [--limit N] [--json]\n"
+            "Usage: python3 search.py <query> [--engine ENGINE] [--limit N] [--json]\n"
             "\n"
             "Options:\n"
+            "  --engine    Search engine: duck (default) | google\n"
             "  --limit N   Number of results (default: 10, max: 30)\n"
-            "  --json      Output as JSON with metadata\n",
+            "  --json      Output as JSON with metadata\n"
+            "\n"
+            "Google search uses CloakBrowser to scrape results (no API key).\n",
             file=sys.stderr,
         )
         sys.exit(1)
@@ -102,10 +183,13 @@ def main():
     query = sys.argv[1]
     args = sys.argv[2:]
 
+    engine = "duck"
     limit = 10
     json_output = "--json" in args
 
     for i, a in enumerate(args):
+        if a == "--engine" and i + 1 < len(args):
+            engine = args[i + 1]
         if a == "--limit" and i + 1 < len(args):
             try:
                 limit = int(args[i + 1])
@@ -115,11 +199,12 @@ def main():
     limit = max(1, min(limit, 30))
 
     try:
-        results = search(query, limit)
+        results = search(query, limit, engine=engine)
 
         if json_output:
             print(json.dumps({
                 "query": query,
+                "engine": engine,
                 "count": len(results),
                 "results": results,
             }, ensure_ascii=False, indent=2))
