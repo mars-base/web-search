@@ -118,14 +118,11 @@ def search_google(query, limit=10):
         browser.close()
 
 
-def search(query, limit=10, engine="duck"):
+def search_duck(query, limit=10):
     """
-    Search using the specified engine.
-    engine: 'duck' (DuckDuckGo, default) or 'google' (CloakBrowser scraping)
+    Search DuckDuckGo and return results.
+    Returns list of dicts: [{title, url, snippet}, ...]
     """
-    if engine == "google":
-        return search_google(query, limit)
-    return search_duck(query, limit)
     try:
         from ddgs import DDGS
     except ImportError:
@@ -142,6 +139,16 @@ def search(query, limit=10, engine="duck"):
             "snippet": r.get("body", r.get("snippet", "")),
         })
     return out
+
+
+def search(query, limit=10, engine="duck"):
+    """
+    Search using the specified engine.
+    engine: 'duck' (DuckDuckGo, default) or 'google' (CloakBrowser scraping)
+    """
+    if engine == "google":
+        return search_google(query, limit)
+    return search_duck(query, limit)
 
 
 def results_to_markdown(results, query):
