@@ -2,7 +2,7 @@
 name: web-search
 description: >
   Search the web and return top results as clean Markdown.
-  Uses DuckDuckGo via the ddgs/duckduckgo-search package.
+  Supports DuckDuckGo (default, no API key) and Google (via CloakBrowser scraping, no API key).
   Returns titles, URLs, and snippets for each result.
   Use this skill whenever the user wants to search the web, find information online,
   look up current events, or research a topic — including phrases like "搜索一下",
@@ -43,7 +43,7 @@ When this skill is invoked, treat `args` as a search query (and optional flags).
 ### Search command
 
 ```bash
-python3 <SKILL_DIR>/scripts/search.py "<query>" [--limit N] [--json]
+python3 <SKILL_DIR>/scripts/search.py "<query>" [--engine ENGINE] [--limit N] [--json]
 ```
 
 `<SKILL_DIR>` is the directory where this SKILL.md lives.
@@ -66,20 +66,30 @@ python3 <SKILL_DIR>/scripts/search.py "<query>" [--limit N] [--json]
 2. **Built-in fallback** — if the script fails or dependencies are missing, use
    the built-in `WebSearch` tool as fallback.
 
+## Search Engines
+
+| Engine | Flag | Requirements | Best for |
+|--------|------|--------------|----------|
+| `duck` (default) | `--engine duck` or omit | `ddgs` or `duckduckgo-search` | Fast, lightweight, no browser |
+| `google` | `--engine google` | `cloakbrowser` | Higher quality results, better for precise queries |
+
 ## Script Options
 
 ```bash
-# Basic search — returns top 10 results
+# Basic search — DuckDuckGo (default), returns top 10 results
 python3 <SKILL_DIR>/scripts/search.py "Python asyncio best practices"
 
+# Google search via CloakBrowser (no API key)
+python3 <SKILL_DIR>/scripts/search.py "fastapi tutorial" --engine google
+
 # Limit results
-python3 <SKILL_DIR>/scripts/search.py "fastapi tutorial" --limit 5
+python3 <SKILL_DIR>/scripts/search.py "kubernetes helm" --limit 5
 
 # JSON output with metadata
-python3 <SKILL_DIR>/scripts/search.py "kubernetes helm" --json
+python3 <SKILL_DIR>/scripts/search.py "golang context" --json
 
 # Site-specific search
-python3 <SKILL_DIR>/scripts/search.py "site:github.com golang context"
+python3 <SKILL_DIR>/scripts/search.py "site:github.com react hooks"
 ```
 
 ## Install Dependencies
@@ -87,10 +97,10 @@ python3 <SKILL_DIR>/scripts/search.py "site:github.com golang context"
 First use only — the script checks and tells you if anything is missing:
 
 ```bash
-python3 -m pip install ddgs
+python3 -m pip install ddgs cloakbrowser
 ```
 
-> **Note:** `ddgs` is the renamed package for `duckduckgo-search`. The script supports both — it tries `ddgs` first, then falls back to `duckduckgo-search`.
+> **Note:** `ddgs` is the renamed package for `duckduckgo-search`. The script supports both — it tries `ddgs` first, then falls back to `duckduckgo-search`. `cloakbrowser` is only needed for `--engine google`.
 
 If on system-managed Python (macOS/Linux), add `--break-system-packages` or use a venv.
 

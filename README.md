@@ -5,8 +5,9 @@ richer, better-formatted results.
 
 ## Features
 
-- **DuckDuckGo search** — no API key needed, no rate limits for casual use
+- **Multi-engine support** — DuckDuckGo (default, fast) or Google (via CloakBrowser, no API key)
 - **Dependency check** — auto-detects missing `ddgs`/`duckduckgo-search` on startup
+- **DuckDuckGo search** — no API key needed, no rate limits for casual use
 - **Clean Markdown output** — each result has title, URL, and snippet
 - **JSON mode** — structured output for programmatic use
 - **Configurable result count** — 1 to 30 results per query
@@ -18,10 +19,10 @@ richer, better-formatted results.
 ```bash
 git clone https://github.com/mars-base/web-search.git
 cd web-search
-python3 -m pip install ddgs
+python3 -m pip install ddgs cloakbrowser
 ```
 
-> **Note:** `ddgs` is the renamed package for `duckduckgo-search`. The script supports both — it tries `ddgs` first, then falls back to `duckduckgo-search`.
+> **Note:** `ddgs` is the renamed package for `duckduckgo-search`. The script supports both — it tries `ddgs` first, then falls back to `duckduckgo-search`. `cloakbrowser` is only needed for `--engine google`.
 
 On Windows, install Python from the Microsoft Store. On macOS/Linux with
 system-managed Python, add `--break-system-packages` or use a venv.
@@ -31,17 +32,20 @@ system-managed Python, add `--break-system-packages` or use a venv.
 ### As a script
 
 ```bash
-# Basic search
+# Basic search — DuckDuckGo (default)
 python3 scripts/search.py "Python asyncio best practices"
 
+# Google search via CloakBrowser (no API key)
+python3 scripts/search.py "fastapi tutorial" --engine google
+
 # Limit results
-python3 scripts/search.py "fastapi tutorial" --limit 5
+python3 scripts/search.py "kubernetes helm" --limit 5
 
 # JSON output
-python3 scripts/search.py "kubernetes helm" --json
+python3 scripts/search.py "golang context" --json
 
 # Site-specific
-python3 scripts/search.py "site:github.com golang context"
+python3 scripts/search.py "site:github.com react hooks"
 ```
 
 ### As a Claude Code skill
@@ -78,6 +82,13 @@ Search workflow:
 3. Ask the user whether to explore deeper: extract content from top 3 / top 5 / all 10 links, or stop here
 4. If the user chooses to explore, use `/web-fetch` to extract full content from each selected link
 ```
+
+## Search Engines
+
+| Engine | Flag | Requirements | Best for |
+|--------|------|--------------|----------|
+| DuckDuckGo | `--engine duck` (default) | `ddgs` or `duckduckgo-search` | Fast, lightweight, no browser |
+| Google | `--engine google` | `cloakbrowser` | Higher quality results, better for precise queries |
 
 ## Output Format
 
