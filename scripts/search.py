@@ -1,17 +1,18 @@
 #!/usr/bin/env python3
 """
-Web search via DuckDuckGo — returns top results as Markdown.
+Web search — returns top results as Markdown.
 
 Usage:
-  python3 search.py "query" [--limit N] [--json]
+  python3 search.py "query" [--engine ENGINE] [--limit N] [--json]
 
 Options:
+  --engine    Search engine: duck (default) | google
   --limit N   Number of results (default: 10, max: 30)
   --json      Output as JSON with metadata
 
 Examples:
   python3 search.py "Python asyncio tutorial" --limit 5
-  python3 search.py "site:github.com fastapi" 10 --json
+  python3 search.py "site:github.com fastapi" --engine google --limit 10 --json
 """
 
 import sys
@@ -43,7 +44,7 @@ def check_dependencies():
     sys.exit(1)
 
 
-def search(query, limit=10):
+def search_duck(query, limit=10):
     """
     Search DuckDuckGo and return results.
     Returns list of dicts: [{title, url, snippet}, ...]
@@ -64,6 +65,58 @@ def search(query, limit=10):
             "snippet": r.get("body", r.get("snippet", "")),
         })
     return out
+
+
+def search_google(query, limit=10):
+    """
+    Search Google via Custom Search API.
+    Requires GOOGLE_API_KEY and GOOGLE_CX environment variables.
+    Returns list of dicts: [{title, url, snippet}, ...]
+    """
+    import os
+    import urllib.request
+    import urllib.parse
+
+    api_key = os.environ.get("GOOGLE_API_KEY")
+    cx = os.environ.get("GOOGLE_CX")
+
+    if not api_key or not cx:
+        raise RuntimeError(
+            "Google search requires GOOGLE_API_KEY and GOOGLE_CX environment variables.\n"
+            "Set them with:\n"
+            "  export GOOGLE_API_KEY=your_api_key\n"
+            "  export GOOGLE_CX=your_search_engine_id\n"
+            "Or use --engine duck (default) for DuckDuckGo search without API keys."
+        )
+
+    url = (
+        "https://www.googleapis.com/customsearch/v1"
+        f"?key={api_key}&cx={cx}&q={urllib.parse.quote(query)}&num={min(limit, 10)}"
+    )
+
+    req = urllib.request.Request(url, headers={"Accept": "application/json"})
+    with urllib.request.urlopen(req, timeout=30) as resp:
+        data = json.load(resp)
+
+    items = data.get("items", [])
+    out = []
+    for item in items:
+        out.append({
+            "title": item.get("title", ""),
+            "url": item.get("link", ""),
+            "snippet": item.get("snippet", ""),
+        })
+    return out
+
+
+def search(query, limit=10, engine="duck"):
+    """
+    Search using the specified engine.
+    engine: 'duck' (DuckDuckGo, default) or 'google' (Custom Search API)
+    """
+    if engine == "google":
+        return search_google(query, limit)
+    return search_duck(query, limit)
 
 
 def results_to_markdown(results, query):
@@ -90,11 +143,14 @@ def main():
 
     if len(sys.argv) < 2:
         print(
-            "Usage: python3 search.py <query> [--limit N] [--json]\n"
+            "Usage: python3 search.py <query> [--engine ENGINE] [--limit N] [--json]\n"
             "\n"
             "Options:\n"
+            "  --engine    Search engine: duck (default) | google\n"
             "  --limit N   Number of results (default: 10, max: 30)\n"
-            "  --json      Output as JSON with metadata\n",
+            "  --json      Output as JSON with metadata\n"
+            "\n"
+            "Google search requires GOOGLE_API_KEY and GOOGLE_CX env vars.\n",
             file=sys.stderr,
         )
         sys.exit(1)
@@ -102,10 +158,13 @@ def main():
     query = sys.argv[1]
     args = sys.argv[2:]
 
+    engine = "duck"
     limit = 10
     json_output = "--json" in args
 
     for i, a in enumerate(args):
+        if a == "--engine" and i + 1 < len(args):
+            engine = args[i + 1]
         if a == "--limit" and i + 1 < len(args):
             try:
                 limit = int(args[i + 1])
@@ -115,11 +174,12 @@ def main():
     limit = max(1, min(limit, 30))
 
     try:
-        results = search(query, limit)
+        results = search(query, limit, engine=engine)
 
         if json_output:
             print(json.dumps({
                 "query": query,
+                "engine": engine,
                 "count": len(results),
                 "results": results,
             }, ensure_ascii=False, indent=2))
