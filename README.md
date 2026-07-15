@@ -5,9 +5,8 @@ richer, better-formatted results.
 
 ## Features
 
-- **Multi-engine support** — DuckDuckGo (default, free) or Google Custom Search (API key)
-- **Dependency check** — auto-detects missing `ddgs`/`duckduckgo-search` on startup
 - **DuckDuckGo search** — no API key needed, no rate limits for casual use
+- **Dependency check** — auto-detects missing `ddgs`/`duckduckgo-search` on startup
 - **Clean Markdown output** — each result has title, URL, and snippet
 - **JSON mode** — structured output for programmatic use
 - **Configurable result count** — 1 to 30 results per query
@@ -32,20 +31,17 @@ system-managed Python, add `--break-system-packages` or use a venv.
 ### As a script
 
 ```bash
-# Basic search — DuckDuckGo (default)
+# Basic search
 python3 scripts/search.py "Python asyncio best practices"
 
-# Google search (requires API key)
-python3 scripts/search.py "fastapi tutorial" --engine google
-
 # Limit results
-python3 scripts/search.py "kubernetes helm" --limit 5
+python3 scripts/search.py "fastapi tutorial" --limit 5
 
 # JSON output
-python3 scripts/search.py "golang context" --json
+python3 scripts/search.py "kubernetes helm" --json
 
 # Site-specific
-python3 scripts/search.py "site:github.com react hooks"
+python3 scripts/search.py "site:github.com golang context"
 ```
 
 ### As a Claude Code skill
@@ -82,23 +78,6 @@ Search workflow:
 3. Ask the user whether to explore deeper: extract content from top 3 / top 5 / all 10 links, or stop here
 4. If the user chooses to explore, use `/web-fetch` to extract full content from each selected link
 ```
-
-## Search Engines
-
-| Engine | Flag | Requirements | Best for |
-|--------|------|--------------|----------|
-| DuckDuckGo | `--engine duck` (default) | `ddgs` or `duckduckgo-search` | Free, privacy-focused, no API key |
-| Google | `--engine google` | `GOOGLE_API_KEY` + `GOOGLE_CX` | Higher quality, precise results |
-
-### Google Custom Search setup (optional)
-
-1. Get API Key: [Google Custom Search JSON API](https://developers.google.com/custom-search/v1/overview)
-2. Create Search Engine: [Programmable Search Engine](https://programmablesearchengine.google.com/)
-3. Set environment variables:
-   ```bash
-   export GOOGLE_API_KEY=your_api_key
-   export GOOGLE_CX=your_search_engine_id
-   ```
 
 ## Output Format
 

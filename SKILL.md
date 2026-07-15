@@ -2,7 +2,7 @@
 name: web-search
 description: >
   Search the web and return top results as clean Markdown.
-  Supports DuckDuckGo (default, no API key) and Google Custom Search (via API key).
+  Uses DuckDuckGo via the ddgs/duckduckgo-search package.
   Returns titles, URLs, and snippets for each result.
   Use this skill whenever the user wants to search the web, find information online,
   look up current events, or research a topic — including phrases like "搜索一下",
@@ -43,7 +43,7 @@ When this skill is invoked, treat `args` as a search query (and optional flags).
 ### Search command
 
 ```bash
-python3 <SKILL_DIR>/scripts/search.py "<query>" [--engine ENGINE] [--limit N] [--json]
+python3 <SKILL_DIR>/scripts/search.py "<query>" [--limit N] [--json]
 ```
 
 `<SKILL_DIR>` is the directory where this SKILL.md lives.
@@ -66,40 +66,20 @@ python3 <SKILL_DIR>/scripts/search.py "<query>" [--engine ENGINE] [--limit N] [-
 2. **Built-in fallback** — if the script fails or dependencies are missing, use
    the built-in `WebSearch` tool as fallback.
 
-## Search Engines
-
-| Engine | Command | Requirements | Best for |
-|--------|---------|--------------|----------|
-| `duck` (default) | `--engine duck` or omit | `ddgs` or `duckduckgo-search` package | Free, no API key, privacy-focused |
-| `google` | `--engine google` | `GOOGLE_API_KEY` + `GOOGLE_CX` env vars | Higher quality results, precise queries |
-
-### Google Custom Search setup (optional)
-
-1. Get API Key: https://developers.google.com/custom-search/v1/overview
-2. Create Search Engine: https://programmablesearchengine.google.com/
-3. Set environment variables:
-   ```bash
-   export GOOGLE_API_KEY=your_api_key
-   export GOOGLE_CX=your_search_engine_id
-   ```
-
 ## Script Options
 
 ```bash
-# Basic search — DuckDuckGo (default), returns top 10 results
+# Basic search — returns top 10 results
 python3 <SKILL_DIR>/scripts/search.py "Python asyncio best practices"
 
-# Google search (requires API key)
-python3 <SKILL_DIR>/scripts/search.py "fastapi tutorial" --engine google
-
 # Limit results
-python3 <SKILL_DIR>/scripts/search.py "kubernetes helm" --limit 5
+python3 <SKILL_DIR>/scripts/search.py "fastapi tutorial" --limit 5
 
 # JSON output with metadata
-python3 <SKILL_DIR>/scripts/search.py "golang context" --json
+python3 <SKILL_DIR>/scripts/search.py "kubernetes helm" --json
 
 # Site-specific search
-python3 <SKILL_DIR>/scripts/search.py "site:github.com react hooks"
+python3 <SKILL_DIR>/scripts/search.py "site:github.com golang context"
 ```
 
 ## Install Dependencies
